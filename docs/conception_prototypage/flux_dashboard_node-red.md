@@ -15,13 +15,29 @@ Pour récupérer les données envoyées par l'objet connecté, nous avons utilis
 *Relier le nœud mqtt in à un nœud de débogage pour vérifier que les données sont correctement reçues.
 
 ## 3.2 Enregistrement de l'objet Fiware Orion et création d'abonnements
-Pour gérer les données avec Fiware Orion, nous avons d'abord enregistré notre objet connecté comme une entité dans le context-broker Orion. Les étapes pour l'enregistrement sont les suivantes :
+Pour gérer les données avec Fiware Orion, nous avons d'abord enregistré les mesures électrique de notre objet connecté comme une entité dans le context-broker Orion. Les étapes pour l'enregistrement sont les suivantes :
 *Utiliser l'API REST de Fiware Orion pour créer une nouvelle entité représentant une mesure électrique (puissance, énergie, tension, courant, etc.).
 *Définir les attributs de l'entité correspondant aux différents objets de mesure.
 
 Ensuite une fois que les entités sont créés, nous avons configurer des abonnements dans Orion. Un pour que chaque mise à jour des données de l'objet soit envoyée à des services spécifiques. Et d'autres contenant des conditions afin d'envoyer une notification à chaque que cette condition est respectée. Lorsqu'un objet dépasse une certaine puissance par exemple une notification est envoyé. Celà permet d'indiquer par la suite que l'appareil dont la puissance est calulé est en fonctionnement.
 
 ## 3.3 Enregistrement historisé dans MySQL
+Pour garder un historique des données, nous avons choisi d'utiliser une base de données MySQL. Node-Red facilite cette intégration grâce à des nœuds spécifiques pour les bases de données. Voici comment nous avons procédé :
+*Ajouter un nœud mysql dans Node-Red.
+*Configurer ce nœud avec les paramètres de connexion à notre base de données MySQL (hôte, utilisateur, mot de passe, base de données).
+*Relier les données reçues par MQTT à ce nœud mysql avec un nœud fonction pour formater les données en requêtes SQL (INSERT INTO).
+
+Pour avoir un affichage plus rapide nous avons décider de ne pas afficher tous les points (un tous les 3 secondes). Notre choix a été d'en afficher une valeur par minute. Pour effectuer cela nous avons dû faire une moyenne des valeurs pour chaque minute. Nous avons donc créer une table qui contiendra une ligne par minutes et une table temporaire, qui contient une ligne toutes les 3 secondes.
+
+Pour rappel nous avons trois capteurs sur notre objet connecté. Voici un exemple de la composition d'une table (table puissance) :
+*timestamp
+*puissance1
+*puissance2
+*puissance3
+
+Nous avons donc écrit un script en SQL pour faire une moyenne des données sur un certain temps depuis la table temporaire, ces moyennes de données sont ensuites insérer dans la table principale.
+Ce script vide également la table temporaire toutes les 10 minutes.
+Ensuite il a fallu créer un EVENT qui exécute le script toutes les minutes.
 
 ## 3.4 Dashboard
 
